@@ -34,6 +34,7 @@ namespace TrajectoryPlanning
         private float _elapsedTime;
         private bool _isPlaying;
         private string _sampleIntervalInput;
+        private string _maxVelocityInput;
         private string _accelerationInput;
         private string _decelerationInput;
         private string _startXInput;
@@ -117,10 +118,11 @@ namespace TrajectoryPlanning
                 return;
             }
 
-            GUILayout.BeginArea(new Rect(12f, 12f, 350f, 430f), GUI.skin.window);
+            GUILayout.BeginArea(new Rect(12f, 12f, 350f, 610f), GUI.skin.window);
             GUILayout.Label("Trajectory Controls");
 
             _sampleIntervalInput = DrawTextField("Sample Interval", _sampleIntervalInput);
+            _maxVelocityInput = DrawTextField("Max Velocity", _maxVelocityInput);
             _accelerationInput = DrawTextField("Acceleration", _accelerationInput);
             _decelerationInput = DrawTextField("Deceleration", _decelerationInput);
 
@@ -149,6 +151,9 @@ namespace TrajectoryPlanning
                 GUILayout.Space(8f);
                 GUILayout.Label(_runtimeGuiStatus);
             }
+
+            GUILayout.Space(10f);
+            DrawRuntimeTelemetry();
 
             GUILayout.EndArea();
         }
@@ -480,6 +485,7 @@ namespace TrajectoryPlanning
             var endPosition = endPoint != null ? endPoint.position : fallbackEndPosition;
 
             _sampleIntervalInput = FormatFloat(profileSettings.sampleInterval);
+            _maxVelocityInput = FormatFloat(profileSettings.maxVelocity);
             _accelerationInput = FormatFloat(profileSettings.acceleration);
             _decelerationInput = FormatFloat(profileSettings.deceleration);
 
@@ -497,12 +503,19 @@ namespace TrajectoryPlanning
             var currentStartPosition = startPoint != null ? startPoint.position : fallbackStartPosition;
             var currentEndPosition = endPoint != null ? endPoint.position : fallbackEndPosition;
             var sampleIntervalChanged = !Mathf.Approximately(profileSettings.sampleInterval, ParseOrCurrent(_sampleIntervalInput, profileSettings.sampleInterval));
+            var maxVelocityChanged = !Mathf.Approximately(profileSettings.maxVelocity, ParseOrCurrent(_maxVelocityInput, profileSettings.maxVelocity));
             var accelerationChanged = !Mathf.Approximately(profileSettings.acceleration, ParseOrCurrent(_accelerationInput, profileSettings.acceleration));
             var decelerationChanged = !Mathf.Approximately(profileSettings.deceleration, ParseOrCurrent(_decelerationInput, profileSettings.deceleration));
 
             if (!TryParseFloat(_sampleIntervalInput, out var sampleInterval) || sampleInterval <= 0f)
             {
                 _runtimeGuiStatus = "Sample interval must be a number greater than 0.";
+                return;
+            }
+
+            if (!TryParseFloat(_maxVelocityInput, out var maxVelocity) || maxVelocity <= 0f)
+            {
+                _runtimeGuiStatus = "Max velocity must be a number greater than 0.";
                 return;
             }
 
@@ -531,6 +544,7 @@ namespace TrajectoryPlanning
             }
 
             profileSettings.sampleInterval = sampleInterval;
+            profileSettings.maxVelocity = maxVelocity;
             profileSettings.acceleration = acceleration;
             profileSettings.deceleration = deceleration;
 
@@ -555,7 +569,7 @@ namespace TrajectoryPlanning
                 fallbackEndPosition = endPosition;
             }
 
-            if (_isPlaying && !startChanged && (endChanged || sampleIntervalChanged || accelerationChanged || decelerationChanged))
+            if (_isPlaying && !startChanged && (endChanged || sampleIntervalChanged || maxVelocityChanged || accelerationChanged || decelerationChanged))
             {
                 _pendingReplan = true;
                 _goalUpdateTimer = 0f;
@@ -614,6 +628,33 @@ namespace TrajectoryPlanning
         private static float ParseOrCurrent(string rawValue, float fallbackValue)
         {
             return TryParseFloat(rawValue, out var parsedValue) ? parsedValue : fallbackValue;
+        }
+
+        private void DrawRuntimeTelemetry()
+        {
+            GUILayout.Label("Plan Telemetry");
+
+            if (_plan == null)
+            {
+                GUILayout.Label("No active plan.");
+                return;
+            }
+
+            GUILayout.Label($"Current Velocity: {FormatFloat(GetCurrentVelocity())} units/s");
+            GUILayout.Label($"Planned Duration: {FormatFloat(_plan.TotalTime)} s");
+            GUILayout.Label($"Peak Velocity: {FormatFloat(_plan.PeakVelocity)} units/s");
+            GUILayout.Label($"Configured Max Velocity: {FormatFloat(profileSettings.maxVelocity)} units/s");
+            GUILayout.Label($"Profile Type: {(_plan.IsTriangular ? "Triangular" : "Trapezoidal")}");
+            GUILayout.Label($"Sample Count: {_plan.Samples.Count}");
+            GUILayout.Label($"Applied Acceleration: {FormatFloat(profileSettings.acceleration)} units/s^2");
+            GUILayout.Label($"Applied Deceleration: {FormatFloat(profileSettings.deceleration)} units/s^2");
+            GUILayout.Label($"Replan Interval: {FormatFloat(profileSettings.sampleInterval)} s");
+
+            if (_isPlaying)
+            {
+                var timeToNextReplan = Mathf.Max(0f, profileSettings.sampleInterval - _goalUpdateTimer);
+                GUILayout.Label($"Next Replan In: {FormatFloat(timeToNextReplan)} s");
+            }
         }
 
         private float GetCurrentVelocity()
