@@ -2,9 +2,7 @@
   "name": "TrajectoryPlanning.Tests.EditMode",
   "rootNamespace": "TrajectoryPlanning.Tests",
   "references": [
-    "TrajectoryPlanning.Runtime",
-    "UnityEngine.TestRunner",
-    "UnityEditor.TestRunner"
+    "TrajectoryPlanning.Runtime"
   ],
   "includePlatforms": [
     "Editor"
@@ -21,4 +19,3 @@
     "TestAssemblies"
   ]
 }
-
