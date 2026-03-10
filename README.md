@@ -2,14 +2,14 @@
 
 Unity C# solution for generating a path from start to end using a trapezoidal velocity profile, with a runtime demo that visualizes the generated path, animates a cube along it, and supports discrete replanning when the goal changes.
 
-![UML diagram](docs/trajectory-planning-uml.svg)
+![UML diagram](uml_diagram.svg)
 
 ## What is included
 
 - Runtime planner in [Assets/Scripts/TrajectoryPlanning/TrapezoidalTrajectoryPlanner.cs](Assets/Scripts/TrajectoryPlanning/TrapezoidalTrajectoryPlanner.cs)
 - Demo scene controller in [Assets/Scripts/TrajectoryPlanning/TrajectoryDemoController.cs](Assets/Scripts/TrajectoryPlanning/TrajectoryDemoController.cs)
 - Edit mode unit tests in [Assets/Tests/EditMode/TrapezoidalTrajectoryPlannerTests.cs](Assets/Tests/EditMode/TrapezoidalTrajectoryPlannerTests.cs)
-- UML image in [docs/trajectory-planning-uml.svg](docs/trajectory-planning-uml.svg)
+- UML image in [uml_diagram.svg](uml_diagram.svg)
 
 ## Project structure
 
