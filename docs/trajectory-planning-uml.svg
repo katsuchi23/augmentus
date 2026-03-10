@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="560" viewBox="0 0 980 560">
+  <style>
+    .title { font: 700 18px Arial, sans-serif; fill: #1d1d1d; }
+    .box-title { font: 700 16px Arial, sans-serif; fill: #1d1d1d; }
+    .text { font: 13px Arial, sans-serif; fill: #222; }
+    .small { font: 12px Arial, sans-serif; fill: #333; }
+    .box { fill: #faf7ef; stroke: #2f4858; stroke-width: 2; rx: 10; ry: 10; }
+    .accent { fill: #e8f1f2; stroke: #33658a; stroke-width: 2; rx: 10; ry: 10; }
+    .line { stroke: #2f4858; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+    .dash { stroke-dasharray: 8 6; }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#2f4858" />
+    </marker>
+  </defs>
+
+  <text x="30" y="36" class="title">Trajectory Planning UML</text>
+
+  <rect x="30" y="70" width="260" height="145" class="box" />
+  <text x="50" y="100" class="box-title">MotionProfileSettings</text>
+  <line x1="45" y1="112" x2="275" y2="112" stroke="#2f4858" stroke-width="1.5" />
+  <text x="50" y="138" class="text">+ sampleInterval : float</text>
+  <text x="50" y="160" class="text">+ maxVelocity : float</text>
+  <text x="50" y="182" class="text">+ acceleration : float</text>
+  <text x="50" y="204" class="text">+ deceleration : float</text>
+
+  <rect x="360" y="70" width="260" height="160" class="box" />
+  <text x="380" y="100" class="box-title">TrajectorySample</text>
+  <line x1="375" y1="112" x2="605" y2="112" stroke="#2f4858" stroke-width="1.5" />
+  <text x="380" y="138" class="text">+ Time : float</text>
+  <text x="380" y="160" class="text">+ Distance : float</text>
+  <text x="380" y="182" class="text">+ Velocity : float</text>
+  <text x="380" y="204" class="text">+ Position : Vector3</text>
+
+  <rect x="690" y="70" width="260" height="195" class="accent" />
+  <text x="710" y="100" class="box-title">TrajectoryPlan</text>
+  <line x1="705" y1="112" x2="935" y2="112" stroke="#2f4858" stroke-width="1.5" />
+  <text x="710" y="138" class="text">+ Start : Vector3</text>
+  <text x="710" y="160" class="text">+ End : Vector3</text>
+  <text x="710" y="182" class="text">+ TotalDistance : float</text>
+  <text x="710" y="204" class="text">+ TotalTime : float</text>
+  <text x="710" y="226" class="text">+ PeakVelocity : float</text>
+  <text x="710" y="248" class="text">+ EvaluatePosition(time) : Vector3</text>
+
+  <rect x="210" y="300" width="320" height="180" class="accent" />
+  <text x="230" y="330" class="box-title">TrapezoidalTrajectoryPlanner</text>
+  <line x1="225" y1="342" x2="515" y2="342" stroke="#2f4858" stroke-width="1.5" />
+  <text x="230" y="368" class="text">+ Generate(start, end, settings) : TrajectoryPlan</text>
+  <text x="230" y="392" class="small">Computes trapezoidal or triangular profile</text>
+  <text x="230" y="414" class="small">Generates time-based samples along the segment</text>
+
+  <rect x="610" y="315" width="310" height="165" class="box" />
+  <text x="630" y="345" class="box-title">TrajectoryDemoController</text>
+  <line x1="625" y1="357" x2="905" y2="357" stroke="#2f4858" stroke-width="1.5" />
+  <text x="630" y="383" class="text">+ RebuildPlan() : void</text>
+  <text x="630" y="405" class="text">+ Play() : void</text>
+  <text x="630" y="427" class="small">Owns start/end transforms and moving object</text>
+  <text x="630" y="449" class="small">Uses generated samples to animate the cube</text>
+
+  <line x1="290" y1="150" x2="360" y2="150" class="line" />
+  <text x="304" y="140" class="small">creates</text>
+
+  <line x1="620" y1="170" x2="690" y2="170" class="line" />
+  <text x="638" y="160" class="small">contains</text>
+
+  <line x1="530" y1="365" x2="690" y2="245" class="line" />
+  <text x="560" y="300" class="small">returns</text>
+
+  <line x1="610" y1="395" x2="530" y2="395" class="line dash" />
+  <text x="544" y="386" class="small">requests</text>
+</svg>
+
