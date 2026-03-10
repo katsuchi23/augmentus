@@ -78,6 +78,44 @@ namespace TrajectoryPlanning
 
             return _samples[_samples.Count - 1].Position;
         }
+
+        public float EvaluateVelocity(float time)
+        {
+            if (_samples.Count == 0)
+            {
+                return 0f;
+            }
+
+            if (time <= 0f || _samples.Count == 1)
+            {
+                return _samples[0].Velocity;
+            }
+
+            if (time >= TotalTime)
+            {
+                return _samples[_samples.Count - 1].Velocity;
+            }
+
+            for (var i = 1; i < _samples.Count; i++)
+            {
+                var next = _samples[i];
+                if (time > next.Time)
+                {
+                    continue;
+                }
+
+                var previous = _samples[i - 1];
+                var duration = next.Time - previous.Time;
+                if (duration <= Mathf.Epsilon)
+                {
+                    return next.Velocity;
+                }
+
+                var normalized = Mathf.InverseLerp(previous.Time, next.Time, time);
+                return Mathf.Lerp(previous.Velocity, next.Velocity, normalized);
+            }
+
+            return _samples[_samples.Count - 1].Velocity;
+        }
     }
 }
-

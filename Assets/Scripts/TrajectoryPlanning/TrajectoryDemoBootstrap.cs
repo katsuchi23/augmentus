@@ -7,7 +7,7 @@ namespace TrajectoryPlanning
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void CreateDemoControllerIfMissing()
         {
-            if (Object.FindObjectOfType<TrajectoryDemoController>() != null)
+            if (Object.FindFirstObjectByType<TrajectoryDemoController>() != null)
             {
                 return;
             }

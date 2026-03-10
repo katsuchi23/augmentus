@@ -8,10 +8,16 @@ namespace TrajectoryPlanning
     {
         public static TrajectoryPlan Generate(Vector3 start, Vector3 end, MotionProfileSettings settings)
         {
+            return Generate(start, end, settings, 0f);
+        }
+
+        public static TrajectoryPlan Generate(Vector3 start, Vector3 end, MotionProfileSettings settings, float initialVelocity)
+        {
             settings.Validate();
 
             var displacement = end - start;
             var totalDistance = displacement.magnitude;
+            var clampedInitialVelocity = Mathf.Clamp(initialVelocity, 0f, settings.maxVelocity);
 
             if (totalDistance <= Mathf.Epsilon)
             {
@@ -29,10 +35,7 @@ namespace TrajectoryPlanning
             }
 
             var direction = displacement / totalDistance;
-            var timeToMaxVelocity = settings.maxVelocity / settings.acceleration;
-            var distanceToMaxVelocity = 0.5f * settings.acceleration * timeToMaxVelocity * timeToMaxVelocity;
-            var timeToStopFromMaxVelocity = settings.maxVelocity / settings.deceleration;
-            var distanceToStopFromMaxVelocity = 0.5f * settings.deceleration * timeToStopFromMaxVelocity * timeToStopFromMaxVelocity;
+            var distanceToStopFromInitialVelocity = (clampedInitialVelocity * clampedInitialVelocity) / (2f * settings.deceleration);
 
             bool isTriangular;
             float peakVelocity;
@@ -41,27 +44,50 @@ namespace TrajectoryPlanning
             float decelerationTime;
             float accelerationDistance;
             float cruiseDistance;
+            float effectiveDeceleration = settings.deceleration;
 
-            if (distanceToMaxVelocity + distanceToStopFromMaxVelocity <= totalDistance)
+            if (totalDistance <= distanceToStopFromInitialVelocity && clampedInitialVelocity > Mathf.Epsilon)
             {
-                isTriangular = false;
-                peakVelocity = settings.maxVelocity;
-                accelerationTime = timeToMaxVelocity;
-                decelerationTime = timeToStopFromMaxVelocity;
-                accelerationDistance = distanceToMaxVelocity;
-                cruiseDistance = totalDistance - distanceToMaxVelocity - distanceToStopFromMaxVelocity;
-                cruiseTime = cruiseDistance / peakVelocity;
+                isTriangular = true;
+                peakVelocity = clampedInitialVelocity;
+                accelerationTime = 0f;
+                accelerationDistance = 0f;
+                cruiseDistance = 0f;
+                cruiseTime = 0f;
+                effectiveDeceleration = (clampedInitialVelocity * clampedInitialVelocity) / (2f * totalDistance);
+                decelerationTime = clampedInitialVelocity / effectiveDeceleration;
             }
             else
             {
-                isTriangular = true;
-                peakVelocity = Mathf.Sqrt((2f * totalDistance * settings.acceleration * settings.deceleration) /
-                    (settings.acceleration + settings.deceleration));
-                accelerationTime = peakVelocity / settings.acceleration;
-                decelerationTime = peakVelocity / settings.deceleration;
-                accelerationDistance = (peakVelocity * peakVelocity) / (2f * settings.acceleration);
-                cruiseDistance = 0f;
-                cruiseTime = 0f;
+                var timeToMaxVelocity = (settings.maxVelocity - clampedInitialVelocity) / settings.acceleration;
+                var distanceToMaxVelocity = ((settings.maxVelocity * settings.maxVelocity) - (clampedInitialVelocity * clampedInitialVelocity)) /
+                    (2f * settings.acceleration);
+                var timeToStopFromMaxVelocity = settings.maxVelocity / settings.deceleration;
+                var distanceToStopFromMaxVelocity = (settings.maxVelocity * settings.maxVelocity) / (2f * settings.deceleration);
+
+                if (distanceToMaxVelocity + distanceToStopFromMaxVelocity <= totalDistance)
+                {
+                    isTriangular = false;
+                    peakVelocity = settings.maxVelocity;
+                    accelerationTime = Mathf.Max(0f, timeToMaxVelocity);
+                    decelerationTime = timeToStopFromMaxVelocity;
+                    accelerationDistance = Mathf.Max(0f, distanceToMaxVelocity);
+                    cruiseDistance = totalDistance - accelerationDistance - distanceToStopFromMaxVelocity;
+                    cruiseTime = cruiseDistance / peakVelocity;
+                }
+                else
+                {
+                    isTriangular = true;
+                    peakVelocity = Mathf.Sqrt(((2f * totalDistance * settings.acceleration * settings.deceleration) +
+                        (settings.deceleration * clampedInitialVelocity * clampedInitialVelocity)) /
+                        (settings.acceleration + settings.deceleration));
+                    accelerationTime = Mathf.Max(0f, (peakVelocity - clampedInitialVelocity) / settings.acceleration);
+                    decelerationTime = peakVelocity / settings.deceleration;
+                    accelerationDistance = Mathf.Max(0f, ((peakVelocity * peakVelocity) - (clampedInitialVelocity * clampedInitialVelocity)) /
+                        (2f * settings.acceleration));
+                    cruiseDistance = 0f;
+                    cruiseTime = 0f;
+                }
             }
 
             var totalTime = accelerationTime + cruiseTime + decelerationTime;
@@ -75,12 +101,14 @@ namespace TrajectoryPlanning
                     direction,
                     sampleTime,
                     totalDistance,
+                    clampedInitialVelocity,
+                    settings.acceleration,
                     accelerationTime,
                     cruiseTime,
                     accelerationDistance,
                     cruiseDistance,
                     peakVelocity,
-                    settings.deceleration));
+                    effectiveDeceleration));
             }
 
             samples.Add(CreateSample(
@@ -89,12 +117,14 @@ namespace TrajectoryPlanning
                 direction,
                 totalTime,
                 totalDistance,
+                clampedInitialVelocity,
+                settings.acceleration,
                 accelerationTime,
                 cruiseTime,
                 accelerationDistance,
                 cruiseDistance,
                 peakVelocity,
-                settings.deceleration));
+                effectiveDeceleration));
 
             return new TrajectoryPlan(start, end, totalDistance, totalTime, peakVelocity, isTriangular, samples);
         }
@@ -105,6 +135,8 @@ namespace TrajectoryPlanning
             Vector3 direction,
             float time,
             float totalDistance,
+            float initialVelocity,
+            float acceleration,
             float accelerationTime,
             float cruiseTime,
             float accelerationDistance,
@@ -117,8 +149,8 @@ namespace TrajectoryPlanning
 
             if (time <= accelerationTime)
             {
-                velocity = peakVelocity * (time / Mathf.Max(accelerationTime, Mathf.Epsilon));
-                distance = 0.5f * velocity * time;
+                velocity = initialVelocity + (acceleration * time);
+                distance = (initialVelocity * time) + (0.5f * acceleration * time * time);
             }
             else if (time <= accelerationTime + cruiseTime)
             {
@@ -143,4 +175,3 @@ namespace TrajectoryPlanning
         }
     }
 }
-
